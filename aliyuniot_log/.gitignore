@@ -1,0 +1,8 @@
+.env
+.DS_Store
+.venv/
+__pycache__/
+*.pyc
+data/
+artifacts/
+aliyun_state.json

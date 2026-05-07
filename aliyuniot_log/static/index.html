@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aliyun IoT Log Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --text: #20242c;
+        --muted: #697386;
+        --line: #dde2ea;
+        --brand: #1f6feb;
+        --brand-strong: #1659c7;
+        --bad: #b42318;
+        --good: #067647;
+        --soft: #edf4ff;
+        --soft-green: #ecfdf3;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 28px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 19px;
+        font-weight: 700;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 14px;
+      }
+
+      main {
+        padding: 20px 28px 28px;
+      }
+
+      button,
+      input {
+        height: 36px;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--text);
+        padding: 0 10px;
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+        font-weight: 600;
+      }
+
+      button:hover {
+        background: var(--brand-strong);
+        border-color: var(--brand-strong);
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .danger {
+        background: #fff;
+        border-color: #f3b8b2;
+        color: var(--bad);
+      }
+
+      .danger:hover {
+        background: #fff5f5;
+        border-color: var(--bad);
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .status {
+        display: grid;
+        grid-template-columns: 1fr 1.1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .panel,
+      .metric,
+      .chart,
+      .logs {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--good);
+        background: var(--soft-green);
+      }
+
+      .source-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .source-card {
+        min-height: 70px;
+        padding: 10px 12px;
+        border: 1px solid #edf0f5;
+        border-radius: 6px;
+        background: #fafbfc;
+      }
+
+      .source-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .source-card strong {
+        display: block;
+        margin-top: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 14px;
+      }
+
+      .run {
+        display: grid;
+        gap: 8px;
+        font-size: 13px;
+      }
+
+      .run-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid #edf0f5;
+        padding-bottom: 8px;
+      }
+
+      .run-row span:last-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: right;
+      }
+
+      .run-row:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .metric {
+        padding: 14px;
+        min-height: 86px;
+      }
+
+      .metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 24px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .chart {
+        height: 320px;
+        padding: 12px;
+      }
+
+      .data-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .panel-chart {
+        height: 300px;
+      }
+
+      @media (max-width: 960px) {
+        header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        main {
+          padding: 14px;
+        }
+
+        .status,
+        .summary,
+        .grid,
+        .data-grid,
+        .source-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .chart {
+          height: 260px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>阿里云 IoT 日志</h1>
+        <div class="muted" id="last-run">等待插件数据</div>
+      </div>
+      <div class="actions">
+        <button class="danger" type="button" onclick="clearData()">清除数据</button>
+        <button type="button" onclick="exportAnalysis('csv')">导出 CSV</button>
+        <button type="button" onclick="exportAnalysis('json')">导出 JSON</button>
+        <button type="button" onclick="loadAll()">刷新</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="status">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>采集状态</h2>
+            <span class="pill">插件模式</span>
+          </div>
+          <div class="source-grid">
+            <div class="source-card">
+              <span>目标页面</span>
+              <strong title="https://iot.console.aliyun.com/lk/monitor/log">IoT 日志监控</strong>
+            </div>
+            <div class="source-card">
+              <span>接收接口</span>
+              <strong>/api/ingest</strong>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>最近接收</h2>
+          </div>
+          <div class="run" id="runStatus">
+            <div class="muted">暂无接收记录</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="summary">
+        <div class="metric"><span>总日志</span><strong id="total">0</strong></div>
+        <div class="metric"><span>设备数</span><strong id="devices">0</strong></div>
+        <div class="metric"><span>异常状态</span><strong id="errors">0</strong></div>
+        <div class="metric"><span>最近筛选总数</span><strong id="latestSearchTotal">-</strong></div>
+      </section>
+
+      <section>
+        <div class="chart" id="searchTotalChart"></div>
+      </section>
+
+      <section>
+        <div class="chart" id="deltaChart"></div>
+      </section>
+
+      <section class="data-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>状态分布</h2>
+          </div>
+          <div class="panel-chart" id="statusChart"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>设备排行</h2>
+          </div>
+          <div class="panel-chart" id="deviceChart"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>设备异常排行</h2>
+          </div>
+          <div class="panel-chart" id="deviceErrorChart"></div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const charts = {
+        searchTotal: echarts.init(document.getElementById("searchTotalChart")),
+        delta: echarts.init(document.getElementById("deltaChart")),
+        status: echarts.init(document.getElementById("statusChart")),
+        device: echarts.init(document.getElementById("deviceChart")),
+        deviceError: echarts.init(document.getElementById("deviceErrorChart")),
+      };
+      let analysisData = {
+        statuses: [],
+        searchTotals: [],
+        devices: [],
+        deviceErrors: [],
+      };
+      bindCopyFromChart(charts.device);
+      bindCopyFromChart(charts.deviceError);
+
+      async function api(path) {
+        if (location.protocol === "file:") {
+          throw new Error("请通过 http://127.0.0.1:8000 打开页面，不要直接打开 HTML 文件。");
+        }
+        const response = await fetch(path);
+        if (!response.ok) throw new Error(`${path}: ${response.status}`);
+        return response.json();
+      }
+
+      async function loadSummary() {
+        const data = await api("/api/summary");
+        document.getElementById("total").textContent = data.total;
+        document.getElementById("devices").textContent = data.devices;
+        document.getElementById("errors").textContent = data.errors;
+        document.getElementById("latestSearchTotal").textContent =
+          data.latest_search_total == null ? "-" : data.latest_search_total;
+        const run = data.last_run;
+        document.getElementById("last-run").textContent = run
+          ? `最近接收：${run.status}，看到 ${run.seen_count} 条，新增 ${run.inserted_count} 条`
+          : "等待插件数据";
+        document.getElementById("runStatus").innerHTML = run
+          ? `
+            <div class="run-row"><span>状态</span><strong>${escapeHtml(run.status)}</strong></div>
+            <div class="run-row"><span>完成时间</span><span>${escapeHtml(formatDateTime(run.finished_at || run.started_at))}</span></div>
+            <div class="run-row"><span>看到 / 新增</span><span>${run.seen_count} / ${run.inserted_count}</span></div>
+            <div class="run-row"><span>来源</span><span title="${escapeHtml(run.message || "")}">${formatSource(run.message)}</span></div>
+          `
+          : `<div class="muted">暂无接收记录</div>`;
+      }
+
+      async function loadCharts() {
+        const [statuses, searchTotals, devices, deviceErrors] = await Promise.all([
+          api("/api/statuses"),
+          api("/api/search-total-timeseries"),
+          api("/api/devices"),
+          api("/api/device-error-rank"),
+        ]);
+        analysisData = {
+          statuses: statuses.items || [],
+          searchTotals: searchTotals.items || [],
+          devices: devices.items || [],
+          deviceErrors: deviceErrors.items || [],
+        };
+
+        charts.searchTotal.setOption({
+          title: { text: "搜索总数 / 差值曲线", left: 8, top: 4, textStyle: { fontSize: 14 } },
+          tooltip: {
+            trigger: "axis",
+            formatter: (params) => {
+              const item = searchTotals.items[params[0].dataIndex];
+              return `${escapeHtml(formatDateTime(item.collected_at))}<br/>总数：${item.total_count} 条<br/>差值：${formatDelta(item.delta_count)} 条<br/>${escapeHtml(formatFilters(item))}`;
+            },
+          },
+          legend: { right: 16, top: 8, data: ["总数", "差值"] },
+          grid: { left: 54, right: 58, top: 58, bottom: 42 },
+          xAxis: { type: "category", data: searchTotals.items.map((x) => formatShortDateTime(x.collected_at)) },
+          yAxis: [
+            { type: "value", name: "总数" },
+            { type: "value", name: "差值" },
+          ],
+          series: [
+            { name: "总数", type: "line", smooth: true, yAxisIndex: 0, data: searchTotals.items.map((x) => x.total_count), color: "#7c3aed" },
+            { name: "差值", type: "line", smooth: true, yAxisIndex: 1, data: searchTotals.items.map((x) => x.delta_count || 0), color: "#ea580c" },
+          ],
+        });
+        renderAnalysisCharts();
+      }
+
+      function renderAnalysisCharts() {
+        charts.delta.setOption({
+          title: { text: "搜索差值曲线", left: 8, top: 4, textStyle: { fontSize: 14 } },
+          tooltip: {
+            trigger: "axis",
+            formatter: (params) => {
+              const item = analysisData.searchTotals[params[0].dataIndex];
+              return `${escapeHtml(formatDateTime(item.collected_at))}<br/>差值：${formatDelta(item.delta_count)} 条<br/>总数：${item.total_count} 条<br/>${escapeHtml(formatFilters(item))}`;
+            },
+          },
+          grid: { left: 54, right: 28, top: 58, bottom: 42 },
+          xAxis: { type: "category", data: analysisData.searchTotals.map((x) => formatShortDateTime(x.collected_at)) },
+          yAxis: { type: "value", name: "差值" },
+          series: [
+            {
+              name: "差值",
+              type: "line",
+              smooth: true,
+              data: analysisData.searchTotals.map((x) => x.delta_count || 0),
+              color: "#ea580c",
+              areaStyle: { opacity: 0.12 },
+            },
+          ],
+        });
+        charts.status.setOption(pieOption("状态分布", analysisData.statuses));
+        charts.device.setOption(rankBarOption("设备排行", analysisData.devices));
+        charts.deviceError.setOption(
+          rankBarOption(
+            "设备异常排行",
+            analysisData.deviceErrors.map((item) => ({
+              name: item.name,
+              value: item.error_count,
+              total_count: item.total_count,
+              error_rate: item.error_rate,
+            })),
+            (item) => `设备：${escapeHtml(item.name)}<br/>异常：${item.value} 条<br/>总数：${item.data.total_count} 条<br/>占比：${item.data.error_rate}%<br/>点击复制设备ID`,
+            "#b42318",
+          ),
+        );
+      }
+
+      function rankBarOption(title, items, formatter, color = "#0f766e") {
+        const ranked = items
+          .slice()
+          .sort((a, b) => Number(b.value || 0) - Number(a.value || 0))
+          .slice(0, 20)
+          .reverse();
+        return {
+          title: { text: title, left: 8, top: 4, textStyle: { fontSize: 14 } },
+          tooltip: {
+            trigger: "item",
+            formatter: formatter || ((item) => `${escapeHtml(item.name)}<br/>数量：${item.value} 条<br/>点击复制设备ID`),
+          },
+          grid: { left: 104, right: 24, top: 46, bottom: 24 },
+          xAxis: { type: "value" },
+          yAxis: {
+            type: "category",
+            data: ranked.map((item) => item.name),
+            axisLabel: {
+              width: 92,
+              overflow: "truncate",
+            },
+          },
+          series: [
+            {
+              type: "bar",
+              data: ranked,
+              color,
+              label: {
+                show: true,
+                position: "right",
+              },
+            },
+          ],
+        };
+      }
+
+      function pieOption(title, items, formatter) {
+        return {
+          title: { text: title, left: 8, top: 4, textStyle: { fontSize: 14 } },
+          tooltip: {
+            trigger: "item",
+            formatter: formatter || ((item) => `${escapeHtml(item.name)}<br/>数量：${item.value} 条<br/>占比：${item.percent}%`),
+          },
+          legend: { type: "scroll", bottom: 0, left: 8, right: 8 },
+          series: [
+            {
+              type: "pie",
+              radius: ["42%", "68%"],
+              center: ["50%", "46%"],
+              data: items,
+            },
+          ],
+        };
+      }
+
+      async function clearData() {
+        if (!confirm("确定清除当前页面里的全部日志、搜索统计和运行记录吗？")) return;
+        const response = await fetch("/api/clear", { method: "POST" });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          document.getElementById("last-run").textContent = data.detail || `清除失败：${response.status}`;
+          return;
+        }
+        await loadAll();
+        document.getElementById("last-run").textContent = "数据已清除";
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function bindCopyFromChart(chart) {
+        chart.on("click", (params) => {
+          const deviceId = params?.data?.name || params?.name;
+          if (!deviceId) return;
+          copyText(String(deviceId));
+        });
+      }
+
+      async function copyText(text) {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            fallbackCopyText(text);
+          }
+          document.getElementById("last-run").textContent = `已复制设备ID：${text}`;
+        } catch (error) {
+          fallbackCopyText(text);
+          document.getElementById("last-run").textContent = `已复制设备ID：${text}`;
+        }
+      }
+
+      function fallbackCopyText(text) {
+        const input = document.createElement("textarea");
+        input.value = text;
+        input.setAttribute("readonly", "");
+        input.style.position = "fixed";
+        input.style.left = "-9999px";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+      }
+
+      function formatSource(message) {
+        if (!message) return "-";
+        const totalMatch = String(message).match(/total=(\d+)/);
+        if (totalMatch) return `搜索总数 ${totalMatch[1]} 条`;
+        if (String(message).includes("table")) return "当前表格";
+        if (String(message).includes("json")) return "接口响应";
+        return escapeHtml(message);
+      }
+
+      function formatFilters(item) {
+        const filters = item.filters || {};
+        const text = Object.entries(filters)
+          .filter(([, value]) => value)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("，");
+        return text || item.active_tab || "未识别筛选条件";
+      }
+
+      function formatDateTime(value) {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return String(value).replace("T", " ").replace(/\+\d\d:\d\d$/, "");
+        const pad = (number) => String(number).padStart(2, "0");
+        return [
+          date.getFullYear(),
+          pad(date.getMonth() + 1),
+          pad(date.getDate()),
+        ].join("-") + " " + [
+          pad(date.getHours()),
+          pad(date.getMinutes()),
+          pad(date.getSeconds()),
+        ].join(":");
+      }
+
+      function formatShortDateTime(value) {
+        const text = formatDateTime(value);
+        if (text === "-") return text;
+        return text.slice(5, 16);
+      }
+
+      function formatDelta(value) {
+        const number = Number(value || 0);
+        return number > 0 ? `+${number}` : String(number);
+      }
+
+      function exportAnalysis(format) {
+        const payload = {
+          exported_at: formatDateTime(new Date().toISOString()),
+          search_totals: analysisData.searchTotals,
+          statuses: analysisData.statuses,
+          devices: analysisData.devices,
+          device_errors: analysisData.deviceErrors,
+        };
+        if (format === "json") {
+          downloadFile("aliyun-iot-analysis.json", "application/json", JSON.stringify(payload, null, 2));
+          return;
+        }
+        downloadFile("aliyun-iot-analysis.csv", "text/csv", toCsv(payload));
+      }
+
+      function toCsv(payload) {
+        const lines = [];
+        lines.push(["section", "time", "name", "value", "delta", "filters"].map(csvCell).join(","));
+        payload.search_totals.forEach((item) => {
+          lines.push(["search_total", formatDateTime(item.collected_at), "", item.total_count, item.delta_count || 0, formatFilters(item)].map(csvCell).join(","));
+        });
+        payload.statuses.forEach((item) => lines.push(["status", "", item.name, item.value, "", ""].map(csvCell).join(",")));
+        payload.devices.forEach((item) => lines.push(["device", "", item.name, item.value, "", ""].map(csvCell).join(",")));
+        payload.device_errors.forEach((item) => {
+          lines.push(["device_error", "", item.name, item.error_count, "", `total=${item.total_count}; rate=${item.error_rate}%`].map(csvCell).join(","));
+        });
+        return lines.join("\n");
+      }
+
+      function csvCell(value) {
+        return `"${String(value ?? "").replaceAll('"', '""')}"`;
+      }
+
+      function downloadFile(filename, type, content) {
+        const blob = new Blob([content], { type });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      async function loadAll() {
+        try {
+          await Promise.all([loadSummary(), loadCharts()]);
+        } catch (error) {
+          document.getElementById("last-run").textContent = error.message;
+          console.error(error);
+        }
+      }
+
+      window.addEventListener("resize", () => Object.values(charts).forEach((chart) => chart.resize()));
+      loadAll();
+      setInterval(loadAll, 30000);
+    </script>
+  </body>
+</html>

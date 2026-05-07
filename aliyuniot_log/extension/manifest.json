@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Aliyun IoT Log Collector",
+  "version": "0.1.0",
+  "description": "Collect Aliyun IoT console log data into a local dashboard.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": [
+    "https://iot.console.aliyun.com/*",
+    "http://127.0.0.1:8000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Aliyun IoT Log Collector"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://iot.console.aliyun.com/lk/monitor/log*"],
+      "js": ["page_hook.js", "content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["page_bridge.js"],
+      "matches": ["https://iot.console.aliyun.com/*"]
+    }
+  ]
+}
