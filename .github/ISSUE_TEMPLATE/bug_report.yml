@@ -1,0 +1,29 @@
+name: Bug report
+description: Report a reproducible issue.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the dashboard action, extension action, and expected result.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Chrome version, Python version, and extension mode.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Do not paste secrets, cookies, real TraceIDs, or full production logs.

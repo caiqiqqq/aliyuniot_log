@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - "aliyuniot_log/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "aliyuniot_log/**"
+      - ".github/workflows/ci.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aliyuniot_log
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check Python syntax
+        run: python -m py_compile config.py dashboard.py db.py extract.py
+
+      - name: Check dashboard JavaScript syntax
+        run: perl -0777 -ne 'print $1 if /<script>(.*)<\/script>/s' static/index.html | node --check

@@ -10,6 +10,14 @@
 - 支持点击设备排行柱子复制设备 ID。
 - 支持导出 CSV / JSON。
 
+## 项目文档
+
+- [架构解析](docs/ARCHITECTURE.md)
+- [贡献指南](CONTRIBUTING.md)
+- [安全说明](SECURITY.md)
+- [变更记录](CHANGELOG.md)
+- [许可证](LICENSE)
+
 ## 安装依赖
 
 ```bash
